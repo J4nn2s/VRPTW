@@ -1,43 +1,59 @@
 import networkx as nx
 import random
+import matplotlib.pyplot as plt
+import typing
+import json
 
-def generate_vrptw_graph(num_customers, num_vehicles, vehicle_capacity, time_window_range, service_duration_range, distance_range):
+
+def generateVRPTWGraph(arcs: int, timeWindowRange: tuple, distanceRange: tuple) -> nx.Graph:
     G = nx.Graph()
+    G.add_node(0)
+    # Add details
+    for i in range(1, arcs):
+        G.add_node(i)
     
-    # Add depot
-    G.add_node(0, demand=0, time_window=(0, float('inf')), service_duration=0)
-    
-    # Add customers
-    for i in range(1, num_customers+1):
-        demand = random.randint(1, 10)  # Random demand for the customer
-        time_window_start = random.randint(0, 50)
-        time_window_end = random.randint(time_window_start, 100)
-        service_duration = random.randint(1, 5)
-        G.add_node(i, demand=demand, time_window=(time_window_start, time_window_end), service_duration=service_duration)
-    
-    # Add edges with random distances
-    for i in range(num_customers+1):
-        for j in range(i+1, num_customers+1):
-            distance = random.uniform(distance_range[0], distance_range[1])
-            G.add_edge(i, j, distance=distance)
+    # Add edges with random distances and service durations
+    for i in range(arcs+1):
+        for j in range(i+1, arcs+1):
+            distance = random.uniform(distanceRange[0], distanceRange[1])
+            timeWindow = timeWindowRange
+            G.add_edge(i, j, distance=distance, timeWindow=timeWindow)
     
     return G
 
-num_customers = 5
-num_vehicles = 2
-vehicle_capacity = 20
-time_window_range = (0, 100)
-service_duration_range = (1, 5)
-distance_range = (1, 10)
+if __name__ == "__main__":
+    print("Lets GO")
+    arcs = 5
+    timeWindowRange = (0, 5)
+    distanceRange = (1, 10)
 
-G = generate_vrptw_graph(num_customers, num_vehicles, vehicle_capacity, time_window_range, service_duration_range, distance_range)
+    G = generateVRPTWGraph(arcs, timeWindowRange, distanceRange)
 
-# Print nodes and their attributes
-print("Nodes:")
-for node in G.nodes(data=True):
-    print(node)
+    save = input("Graph speichern ? ('y')")
 
-# Print edges and their attributes
-print("\nEdges:")
-for edge in G.edges(data=True):
-    print(edge)
+    if save == "y":
+
+        # Convert graph to JSON data
+        json_data = nx.node_link_data(G)
+        # Save JSON data to a file
+        with open("vrptw_graph.json", "w") as f:
+            json.dump(json_data, f)
+
+        print("Graph saved successfully as vrptw_graph.json.")
+
+    # Print nodes and their attributes
+    print("Nodes:")
+    for node in G.nodes():
+        print(node)
+
+    # Print edges and their attributes
+    print("\nEdges:")
+    for edge in G.edges(data=True):
+        print(edge)
+
+    pos = nx.spring_layout(G)  # Layout des Graphen festlegen (hier: Frühjahrs-Layout)
+    nx.draw(G, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=10, font_weight='bold')  # Graph plotten
+    edge_labels = nx.get_edge_attributes(G, 'distance')  # Kantengewichte erhalten
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)  # Kantengewichte plotten
+    plt.title('VRPTW Graph')  # Titel des Plots festlegen
+    plt.show()  # Plot anzeigenq
